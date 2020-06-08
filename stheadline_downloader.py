@@ -20,8 +20,9 @@ stheadline_links = [
     'https://std.stheadline.com/daily/article/1611183/%E6%97%A5%E5%A0%B1-%E6%B8%AF%E8%81%9E-%E8%B3%87%E7%A7%91%E8%BE%A6%E9%96%8B%E7%99%BCAPI-%E4%BE%BF%E5%88%A9%E7%A8%8B%E5%BC%8F%E9%96%8B%E7%99%BC%E5%93%A1'
 ]
 
-def extract_scheme_1(driver, link):
+def extract_scheme_1(driver, link, sleep=0):
     driver.get(link)
+    time.sleep(sleep)
     title_elems = driver.find_elements(By.XPATH, '//article/header/h1')
     pub_date_elems = driver.find_elements(By.XPATH, '//article/header/span')
     content_elems = driver.find_elements(By.XPATH, "//article/section/div[position() = 2]/p")
@@ -83,13 +84,12 @@ if __name__ == "__main__":
     )
 
     parser.add_argument(
-        'resume_from',
+        '--resume_from',
         default=None, #'downloaded/links/stheadline_2017-11-22.txt'
         help='Output folder'
     )
 
     args = parser.parse_args(sys.argv[1:])
-
     prev_stheadline_link_files = []
     target_folder = args.output_folder #'/home/pacowong/research/website-crawler/downloaded/sites/stheadline/'
     link_file_regex = args.file_selector #"downloaded/links/stheadline_2*"
@@ -108,12 +108,18 @@ if __name__ == "__main__":
 
         links = load_links(file_path)
         print("{} links".format(len(links)))
-        for cur_link in links:
+        first_link = True
+        for cur_link in sorted(links):
             link_name = hashlib.md5(cur_link.encode('utf-8')).hexdigest()
             if os.path.isfile(os.path.join(target_folder, link_name + '.json')):
                 # File exists
                 continue
-            structured_data = extract_scheme_1(driver, cur_link)
+            if first_link:
+                first_link = False
+                structured_data = extract_scheme_1(driver, cur_link, sleep=10) #Cloudfare slow start
+            else:
+                structured_data = extract_scheme_1(driver, cur_link)
+
             with open(os.path.join(target_folder, link_name + '.json'), 'w') as fp:
                 json.dump(structured_data, fp)
 
