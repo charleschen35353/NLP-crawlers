@@ -4,6 +4,7 @@ import os
 import json
 import glob
 import hashlib
+import argparse
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.wait import WebDriverWait
@@ -71,13 +72,13 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Download articles from the files of links')
     parser.add_argument(
         'file_selector',
-        default='downloaded/links/stheadline_2*',
+        #default='downloaded/links/stheadline_2*',
         help='Files which contain a list of links to articles'
     )
 
     parser.add_argument(
         'output_folder',
-        default='/home/pacowong/research/website-crawler/downloaded/sites/stheadline/',
+        #default='/home/pacowong/research/website-crawler/downloaded/sites/stheadline/',
         help='Output folder'
     )
 
