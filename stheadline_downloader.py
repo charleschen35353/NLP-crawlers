@@ -27,14 +27,21 @@ def extract_scheme_1(driver, link, sleep=0):
     title_elems = driver.find_elements(By.XPATH, '//article/header/h1')
     pub_date_elems = driver.find_elements(By.XPATH, '//article/header/span')
     content_elems = driver.find_elements(By.XPATH, "//article/section/div[position() = 2]/p")
-    #return header_elems[0].text, date_elems[0].text, section_elems[0].text, 'traditional_chinese'
-    title, pub_date, content = None, None, None
+    tags_elems = driver.find_elements(By.CSS_SELECTOR, 'form.mx-1 > input.btn')
+    title, pub_date, content, tags = None, None, None, None
     if (title_elems is not None) and (len(title_elems) > 0):
         title = title_elems[0].text
     if (pub_date_elems is not None) and (len(pub_date_elems) > 0):
         pub_date = pub_date_elems[0].text
     if (content_elems is not None) and (len(content_elems) > 0):
         content = content_elems[0].text
+    if (tags_elems is not None) and (len(tags_elems) > 0):
+        tags = []
+        for elem in tags_elems:
+            try:
+                tags.append(elem.get_attribute("title"))
+            except:
+                print("Cannot find title for an input element in {}".format(link))
     return {
         'title': title,
         'author': None,
@@ -43,8 +50,8 @@ def extract_scheme_1(driver, link, sleep=0):
         'pub_date': pub_date,
         'language': 'traditional_chinese',
         'content': content,
-        'tags': None,
-        'extractor': 'extract_scheme_1.v1',
+        'tags': tags,
+        'extractor': 'extract_scheme_1.v2',
     }
 
 def load_links(file_path):
