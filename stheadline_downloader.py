@@ -5,6 +5,7 @@ import json
 import glob
 import hashlib
 import argparse
+import random
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.wait import WebDriverWait
@@ -118,7 +119,7 @@ if __name__ == "__main__":
                 first_link = False
                 structured_data = extract_scheme_1(driver, cur_link, sleep=10) #Cloudfare slow start
             else:
-                structured_data = extract_scheme_1(driver, cur_link)
+                structured_data = extract_scheme_1(driver, cur_link, sleep=random.randint(5,8))
 
             with open(os.path.join(target_folder, link_name + '.json'), 'w') as fp:
                 json.dump(structured_data, fp)
