@@ -1,5 +1,6 @@
 import sys
 import time
+import datetime
 import os
 import json
 import glob
@@ -11,6 +12,7 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
+from selenium.common.exceptions import TimeoutException
 
 #Some links obtained from
 #https://std.stheadline.com/daily/formerly/%E6%97%A5%E5%A0%B1-%E6%98%94%E6%97%A5-2017-06-06
@@ -70,13 +72,6 @@ jobs = {
     }
 }
 
-driver = webdriver.Chrome()
-driver.implicitly_wait(3)
-try:
-    driver.maximize_window()
-except:
-    print("Cannot maximize the window.")
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Download articles from the files of links')
     parser.add_argument(
@@ -105,44 +100,48 @@ if __name__ == "__main__":
     total_file_path = len(stheadline_link_files)
 
     resume_from_file_path = args.resume_from #'downloaded/links/stheadline_2017-11-22.txt'
-    begin_resume = False
-    for n, file_path in enumerate(sorted(stheadline_link_files)):
-        print("{} {}/{}".format(file_path, n, total_file_path))
-        if begin_resume or (resume_from_file_path is None) or (file_path == resume_from_file_path):
-            begin_resume = True
+    
+    while True:
+        driver = webdriver.Chrome()
+        driver.implicitly_wait(3)
+        # try:
+        #     driver.maximize_window()
+        # except:
+        #     print("Cannot maximize the window.")
+        
+        print("Downloader starts at {}".format(datetime.datetime.today()))
+        print("Resume from {}".format(resume_from_file_path))
+        begin_resume = False
+        try:
+            for n, file_path in enumerate(sorted(stheadline_link_files)):
+                if begin_resume or (resume_from_file_path is None) or (file_path == resume_from_file_path):
+                    begin_resume = True
 
-        if not begin_resume:
-            continue
+                if not begin_resume:
+                    continue
+                print("{} {}/{}".format(file_path, n, total_file_path))
+                resume_from_file_path = file_path
+                links = load_links(file_path)
+                print("{} links".format(len(links)))
+                first_link = True
+                for cur_link in sorted(links):
+                    link_name = hashlib.md5(cur_link.encode('utf-8')).hexdigest()
+                    if os.path.isfile(os.path.join(target_folder, link_name + '.json')):
+                        # File exists
+                        continue
+                    if first_link:
+                        first_link = False
+                        structured_data = extract_scheme_1(driver, cur_link, sleep=10) #Cloudfare slow start
+                    else:
+                        structured_data = extract_scheme_1(driver, cur_link, sleep=random.randint(5,8))
 
-        links = load_links(file_path)
-        print("{} links".format(len(links)))
-        first_link = True
-        for cur_link in sorted(links):
-            link_name = hashlib.md5(cur_link.encode('utf-8')).hexdigest()
-            if os.path.isfile(os.path.join(target_folder, link_name + '.json')):
-                # File exists
-                continue
-            if first_link:
-                first_link = False
-                structured_data = extract_scheme_1(driver, cur_link, sleep=10) #Cloudfare slow start
-            else:
-                structured_data = extract_scheme_1(driver, cur_link, sleep=random.randint(5,8))
+                    with open(os.path.join(target_folder, link_name + '.json'), 'w') as fp:
+                        json.dump(structured_data, fp)
+        except TimeoutException:
+            driver.close()
+            print("Encounter selenium.common.exceptions.TimeoutException. Wait for 10 minutes and retry again.")
+            time.sleep(10*60)
+            
 
-            with open(os.path.join(target_folder, link_name + '.json'), 'w') as fp:
-                json.dump(structured_data, fp)
-
-    # for job_name in jobs:
-    #     job = jobs[job_name]
-    #     for cur_link in job['links']:
-    #         structured_data = job['extractor'](driver, cur_link)
-    #         print(structured_data)
-
-
-        #https://stackoverflow.com/questions/30403415/using-multiple-criteria-to-find-a-webelement-in-selenium
-        #header_tags = driver.find_elements(By.TAG_NAME, 'header')
-
-        #header_elems = driver.find_elements(By.XPATH, '//article/header/h1')
-        #date_elems = driver.find_elements(By.XPATH, '//article/header/span')
-        #section_elems = driver.find_elements(By.XPATH, "//article/section/div[position() = 2]/p")
-
-    driver.close()
+   
+    
