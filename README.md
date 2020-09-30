@@ -1,3 +1,3 @@
 # NLP-crawlers
 
-This is a repo for various Hong Kong news website crawlers: am730 / UBC
+This is a repo for various Hong Kong news website crawlers: am730 / BBC / STHEADLINE
